@@ -2,9 +2,9 @@
 /*
 Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
-Plugin URI: http://www.glutenenvy.com/plugins/geocontacts
+Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1
+Version: 0.1.1
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
