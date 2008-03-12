@@ -2,7 +2,7 @@
 Contributors: bcking
 Donate link: http://www.glutenenvy.com/
 Tags: contacts, people, lists, addresses, geo, google, address book, gravatar
-Requires at least: 
+Requires at least: 2.0
 Tested up to: 2.5
 Stable tag: 0.1
 
