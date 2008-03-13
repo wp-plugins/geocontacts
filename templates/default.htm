@@ -1,7 +1,7 @@
 <div style="border: 1px solid #000; padding: 5px; margin-bottom: 15px; background: bottom no-repeat #ffffff;">
 <div id="hcard-{$first_name}-{$surname}" class="vcard">
   <img style="float:right; margin-left:4px" src="{$gravatar}" alt="photo of {$first_name} {$surname}" class="photo"/>
- <a class="url fn" href="{$website}">{$first_name} {$last_name}</a>
+ <a class="url fn" href="{$website}" target="_blank">{$first_name} {$last_name}</a>
  <div class="org">{$organization}</div>
  <a class="email" href="mailto:{$email}">{$email}</a>
  <div class="adr">
@@ -11,13 +11,11 @@
   <span class="region">{$state}</span>
 , 
   <span class="postal-code">{$postcode}</span>
-
   <span class="country-name">{$country}</span>
-
  </div>
  <div class="tel">{$phone}</div>
  <div class="geo">GEO: 
-   <a href="{$mapsite}">
+   <a href="{$mapsite}" target="_blank">
    <span class="latitude">{$lat}</span>, 
    <span class="longitude">{$lon}</span>
    </a>

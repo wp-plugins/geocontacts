@@ -4,7 +4,7 @@ Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
 Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1.1
+Version: 0.1.2
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
@@ -12,14 +12,14 @@ Min WP Version: 2.0
 Max WP Version: 2.5
 
 === RELEASE NOTES ===2008-03-12 - v0.1 - first version
+2008-03-13 - v0.1.2 - Interface clean up, Updated readme, Added screen shots
 */
 
 /*
-Commercial users of this plug-in should do one of the following:
-1. Link back to glutenenvy.com 
-2. Donate to development of this plugin
-3. Promote the Gluten Free cause by sending me useful tid-bits of 
-information on products, services, legislation, etc., etc.
+Copyright 2007-2008 [Modern Success, Inc.](http://www.glutenenvy.com/)
+
+Commercial users are requested to, but not required to, contribute promotion, 
+know-how, or money to plug-in development or to www.glutenenvy.com. 
 
 This is program is free software; you can redistribute it and/or modifyit under the terms of the GNU General Public License as published bythe Free Software Foundation; either version 2 of the License, or(at your option) any later version.This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty ofMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See theGNU General Public License for more details.You should have received a copy of the GNU General Public Licensealong with this program; if not, write to the Free SoftwareFoundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USAOnline: http://www.gnu.org/licenses/gpl.txt*/
 $geocontacts_version = '0.1';
@@ -508,7 +508,7 @@ function geocontacts_main() {
 			<img src='".geocontacts_gravatar($row->email,80,'R')."'>
 			</td> 
 			<td >			
-			<center>&lt;!--geocontacts".$row->id."--&gt;<br />
+			<center>GEOCONTACT[".$row->id."]<br />
             <a href='$geocontacts_basefile?page=geocontacts/geocontacts.php&action=edit&id=".$row->id."'>".__('[Edit]')."</a>&nbsp;&nbsp; 		
             <a href='$geocontacts_basefile?page=geocontacts/geocontacts.php&action=delete&id=".$row->id."'>".__('[Delete]')."</a><br />
             <a href='".$geocontacts_basefile."?page=geocontacts/geocontacts.php'>".__('[Clear Form]')."</a></center>
@@ -516,7 +516,7 @@ function geocontacts_main() {
             echo "</div>";
         } ?>
         
-        <h2><a name="new"></a>Add Contact</h2>
+        <h2><a name="new"></a>Add / Copy Contact</h2>
         <form class="geocontacts" action="<?php echo get_bloginfo( 'wpurl' ); ?>/wp-admin/admin.php?page=geocontacts/geocontacts.php" method="post" id="geocontacts">
         <?php echo _geocontacts_getaddressform(); ?>
         <p class="submit">
@@ -878,7 +878,8 @@ function geocontacts_list($content) {
 		$single = "";
 
 		// http://maps.google.com/?ie=UTF8&z=14&t=h&q=21.26186090589837,-157.80624389648437
-		$googlemap1 = "http://maps.google.com/?ie=UTF8&amp;z=14&amp;t=h&amp;q=";
+		$googlemap1 = "http://maps.google.com/?ie=UTF8&amp;z=";
+		$googlemap2 = "&amp;t=h&amp;q=";
 				
 		// template codes 
 		$findme[0] = "{\$gravatar}";
@@ -918,7 +919,7 @@ function geocontacts_list($content) {
 			$changeto[14] = geocontacts_getIfNotEmpty("%s",stripslashes($row->lat));
 			$changeto[15] = geocontacts_getIfNotEmpty("%s",stripslashes($row->lon));
 			$changeto[16] = geocontacts_getIfNotEmpty("%s",stripslashes($row->zoom));
-			$changeto[17] = geocontacts_getIfNotEmpty("%s",$googlemap1.stripslashes($row->lat).",".stripslashes($row->lon));
+			$changeto[17] = geocontacts_getIfNotEmpty("%s",$googlemap1.stripslashes($row->zoom).$googlemap2.stripslashes($row->lat).",".stripslashes($row->lon));
 
 			
 			$contact = str_replace($findme, $changeto, $template_src);
