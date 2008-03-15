@@ -159,8 +159,8 @@ function geocontacts_geocode () {
 					document.getElementById("lat").value = lat;
 					document.getElementById("lon").value = lon;
 					//alert(address + " found and coded");
-                                    
-                                        geocontacts_adjustmap(lat,lon,zoom);
+					
+					geocontacts_adjustmap(lat,lon,zoom);
 //                                        geocontacts_geocode_finetune();
 				}
 			}
@@ -175,10 +175,19 @@ function geocontacts_adjustmap(lat,lon,zoom) {
 	// Create a marker
 	geocontacts_createmarker(lat,lon);
 			
-        	// Center the map on this point
-	geocontacts_map.setCenter(geocontacts_point, parseInt(zoom));
+	// Center the map on this point
+	geocontacts_map.setCenter(geocontacts_point);
 
 }
+
+function geocontacts_redrawmap() {
+	// Create a marker
+	geocontacts_createmarker(document.getElementById("lat").value,document.getElementById("lon").value);
+			
+	// Center the map on this point
+	geocontacts_map.setCenter(geocontacts_point, parseInt(document.getElementById("zoom").value));
+}
+
 
 function geocontacts_showmap (lat, lon, zoom) {
         // decimal coordinates have a maximum
@@ -199,42 +208,49 @@ function geocontacts_showmap (lat, lon, zoom) {
         if(rndlat>maxlat) {
                 mylat=85;
                 zoom=2;
-		document.getElementById("lat").value = mylat;
-		document.getElementById("zoom").value = zoom;
+				document.getElementById("lat").value = mylat;
+				document.getElementById("zoom").value = zoom;
         } else if(rndlat<minlat) {
                 mylat=-85;
                 zoom=2;
-		document.getElementById("lat").value = mylat;
-		document.getElementById("zoom").value = zoom;
+				document.getElementById("lat").value = mylat;
+				document.getElementById("zoom").value = zoom;
         }
         
         if(rndlon>maxlon) {
                 mylon=180;
                 zoom=2;
                 document.getElementById("lon").value = mylon;
-		document.getElementById("zoom").value = zoom;
+				document.getElementById("zoom").value = zoom;
         } else if(rndlon<minlon) {
                 mylon=-180;
                 zoom=2;
                 document.getElementById("lon").value = mylon;
-		document.getElementById("zoom").value = zoom;
+				document.getElementById("zoom").value = zoom;
         }
-       		
+    
+	if (!GBrowserIsCompatible()) { 
+		alert("Please try a different browser for Google maps.");
+	}
+
 	// Create new map object
 	geocontacts_map = new GMap2(document.getElementById("map"));
-        // create a point
+	// create a point
 	geocontacts_point = new GLatLng(parseFloat(mylat),parseFloat(mylon));	
 
-	// setup gmap unload as seen at http://dev.wp-plugins.org/browser/geo-mashup/trunk/geo-mashup/geo-mashup.js
 	if (document.all&&window.attachEvent) { // IE-Win 
 		window.attachEvent("onunload", GUnload); 
 	} else if (window.addEventListener) { // Others 
 		window.addEventListener("unload", GUnload, false); 
 	} 
 
+	geocontacts_map.addMapType(G_PHYSICAL_MAP);
 	geocontacts_map.addControl(new GMapTypeControl(1)); 
 	geocontacts_map.addControl(new GLargeMapControl()); 
 	
-        geocontacts_adjustmap(mylat,mylon,zoom);
+	geocontacts_adjustmap(mylat,mylon,zoom);
 	
+	// safari browsers do not init like firefox and ie. 
+	// redraw the map in a few seconds to get initial map display on safari
+	setTimeout("geocontacts_redrawmap()",2000);	
 }

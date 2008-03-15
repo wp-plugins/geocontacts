@@ -4,7 +4,7 @@ Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
 Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1.3
+Version: 0.1.4
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
@@ -14,16 +14,15 @@ Max WP Version: 2.5
 === RELEASE NOTES ===2008-03-12 - v0.1 - first version
 2008-03-13 - v0.1.2 - Interface clean up, Updated readme, Added screen shots
 2008-03-14 - v0.1.3 - Updated Gravatar size for larger 512 pixel Gravatars
-*/
+2008-03-15 - v0.1.4 - Interface clean ups in edit screen, solved Safari map display problem, added redraw map button, added physical maps
 
-/*
 Copyright 2007-2008 [Modern Success, Inc.](http://www.glutenenvy.com/)
 
 Commercial users are requested to, but not required to, contribute promotion, 
 know-how, or money to plug-in development or to www.glutenenvy.com. 
 
 This is program is free software; you can redistribute it and/or modifyit under the terms of the GNU General Public License as published bythe Free Software Foundation; either version 2 of the License, or(at your option) any later version.This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty ofMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See theGNU General Public License for more details.You should have received a copy of the GNU General Public Licensealong with this program; if not, write to the Free SoftwareFoundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USAOnline: http://www.gnu.org/licenses/gpl.txt*/
-$geocontacts_version = '0.1';
+$geocontacts_version = '0.1.4';
 
 define('geocontacts_google_geocoder', 'http://maps.google.com/maps/geo?q=', false);
 define('geocontacts_google_regexp', "\<coordinates\>(.*),(.*),0\<\/coordinates\>");
@@ -45,7 +44,9 @@ function geocontacts_adminhead() {
     form.geocontacts tr input {width:95%; border-color:#e5f3ff; background-color: white}
     </style>
     <?php
+	echo geocontacts_html_note();
     echo geocontacts_geocode_header();
+    echo geocontacts_javascript();
 }
 
 add_action('wp_head', 'geocontacts_wphead');
@@ -60,17 +61,29 @@ function geocontacts_wphead() {
       li.geocontacts-item .address span {display:block}
     </style>
     <?php
-	echo geocontacts_geocode_header();
+	echo geocontacts_html_note();
+//	echo geocontacts_geocode_header();
+//	echo geocontacts_javascript();
 } // end geocontacts_wphead()
 
-function geocontacts_geocode_header() {
+function geocontacts_html_note() {
     $scripts = "<!-- Location provided by GeoContacts v ".get_option("geocontacts_version")." (http://www.glutenenvy.com) -->\n";
     $scripts .= "<meta name=\"plugin\" content=\"geocontacts\">";
+	return $scripts;
+}
+
+function geocontacts_geocode_header() {
+    $scripts = "";
 
 	$google_apikey = get_settings('geocontacts_google_apikey', true);
 	if($google_apikey != "") {
 		$scripts .= "\n".'<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key='. $google_apikey .'" ></script>';
 	}
+	return $scripts;
+}
+
+function geocontacts_javascript() {
+    $scripts = "";
 	
 	$plugindir = get_bloginfo('wpurl') . "/wp-content/plugins/geocontacts";
 	$scripts .= "\n".'<script type="text/javascript" src="'.$plugindir.'/geocontacts.js"></script>';
@@ -624,21 +637,21 @@ function geocontacts_gravatar($email,$size='null',$rating='null') {
 	
 	if( get_settings('geocontacts_gravatar_enable', true) ) {
 
-		$gravatar = "http://www.gravatar.com/avatar.php?gravatar_id=".md5($email);
+		$gravatar = "http://www.gravatar.com/avatar.php?g=".md5($email);
 		
 		if ($size!=='null') {
-			$gravatar .= "&amp;size=".$size;
+			$gravatar .= "&amp;s=".$size;
 		} else {
-			$gravatar .= "&amp;size=".get_settings('geocontacts_gravatar_size', true);
+			$gravatar .= "&amp;s=".get_settings('geocontacts_gravatar_size', true);
 		}
 
 		if ($rating!=='null') {
-			$gravatar .= "&amp;rating=".$rating;
+			$gravatar .= "&amp;r=".$rating;
 		} else {
-			$gravatar .= "&amp;rating=".get_settings('geocontacts_gravatar_rating', true);
+			$gravatar .= "&amp;r=".get_settings('geocontacts_gravatar_rating', true);
 		}
 		
-		$gravatar .= "&amp;default=".$gravatar_image;
+		$gravatar .= "&amp;d=".urlencode($gravatar_image);
 
 	} else {
 		$gravatar = $gravatar_image;
@@ -750,6 +763,8 @@ function _geocontacts_getaddressform($data='null') {
             <div class="line">
 				<div class="input">
 		                '.__('<br />Post anchor: <em>GEOCONTACT['.$data->id.']</em>').'
+						&nbsp;&nbsp;&nbsp;&nbsp;[ <a href="#" onclick="geocontacts_geocode();return false;" title="Geocode this address" 
+				       	id="geocode">Geocode this address</a> ]
 				</div>
             </div>';
 	}
@@ -763,7 +778,7 @@ function _geocontacts_getaddressform($data='null') {
 				<label for="notes">'.__('Notes:').'</label>
 				<textarea name="notes" id="notes" rows="3">'.stripslashes($data->notes).'</textarea>
 			</div>
-        </div>';
+		</div>';
 		} else {
 		$out .= '
         </div>
@@ -823,13 +838,18 @@ function _geocontacts_getaddressform($data='null') {
 					</select>";
 					$out .= str_replace("value='$zoom'","value='$zoom' selected='selected'", $select);
 				
-	$out .= '			
+	$out .= '		
+					&nbsp;[ <a href="#" onclick="geocontacts_redrawmap();return false;" title="Redraw map with these coordinates" 
+				       	id="redraw">Redraw map</a> ]	
             </div>
         </div>
         <div class="line">
             <div class="input" style="width:100%">
-                <span><br />[ <a href="#" onclick="geocontacts_geocode();return false;" title="Geocode this address" 
-				       id="geocode">Geocode this address</a> ]</span>
+                <br /><br /><label for="inst">'.__('Use the map for fine tuning:').'</label><br />
+				<span>A single click selects new cordinates.
+				A double-click will zoom in a level and set a new coordinate location.
+				Drag the map using your mouse with a held click.
+				Use the drop down box or map controls to zoom in and out.</span>
             </div>
         </div>
 	</div>
@@ -841,7 +861,7 @@ function _geocontacts_getaddressform($data='null') {
     //<![CDATA[
 	// load up the first map in the edit screen
 	geocontacts_showmap (document.getElementById("lat").value, document.getElementById("lon").value, document.getElementById("zoom").value);
-	geocontacts_geocode_finetune ();  
+	geocontacts_geocode_finetune (); 
 	//]]>
     </script>
 		</div>

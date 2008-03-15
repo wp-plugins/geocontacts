@@ -4,8 +4,7 @@ Donate link: http://www.glutenenvy.com/software/geocontacts/
 Tags: contacts, contact list, lists, addresses, address list, geocode, latitude, longitude, geo, google, address book, gravatar, templates, anchors, gluten free, googlemaps, google maps, api, waypoint
 Requires at least: 2.0
 Tested up to: 2.5
-Stable tag: 0.1.3
-Version: 0.1.3
+Stable tag: 0.1.4
 
 == Description ==
 
@@ -28,6 +27,8 @@ GeoContacts features:
 * Optional Google maps link url with your coordinates in template display. Hot!
 
 Version 0.1.3 Adds support for the new 512 pixel Gravatars
+Version 0.1.4 Solves map display problem on Safari, adds physical maps
+  adds a redraw map button, and adds some help in the edit screen
 
 == Installation ==
 
