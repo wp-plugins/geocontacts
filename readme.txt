@@ -2,9 +2,10 @@
 Contributors: bcking
 Donate link: http://www.glutenenvy.com/software/geocontacts/
 Tags: contacts, contact list, lists, addresses, address list, geocode, latitude, longitude, geo, google, address book, gravatar, templates, anchors, gluten free, googlemaps, google maps, api, waypoint
-Requires at least: 2.0
+Requires at least: 2.2
 Tested up to: 2.5
-Stable tag: 0.1.4
+Stable tag: trunk
+Version: 0.1.4
 
 == Description ==
 
