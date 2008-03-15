@@ -4,7 +4,7 @@ Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
 Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1.2
+Version: 0.1.3
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
@@ -13,6 +13,7 @@ Max WP Version: 2.5
 
 === RELEASE NOTES ===2008-03-12 - v0.1 - first version
 2008-03-13 - v0.1.2 - Interface clean up, Updated readme, Added screen shots
+2008-03-14 - v0.1.3 - Updated Gravatar size for larger 512 pixel Gravatars
 */
 
 /*
@@ -170,7 +171,95 @@ function geocontacts_options() {
 		<?php _e('Size Gravatars to: ') ?>
 		<select name="geocontacts_gravatar_size" id="geocontacts_gravatar_size">
 		<?php
-		    $select = "<option value='80'>80x80</option>
+		    $select = "
+		    <option value='512'>512x512</option>
+		    <option value='510'>510x510</option>
+		    <option value='505'>505x505</option>
+		    <option value='500'>500x500</option>
+		    <option value='495'>495x495</option>
+		    <option value='490'>490x490</option>
+		    <option value='485'>485x485</option>
+		    <option value='480'>480x480</option>
+		    <option value='475'>475x475</option>
+		    <option value='470'>470x470</option>
+		    <option value='465'>465x465</option>
+		    <option value='460'>460x460</option>
+		    <option value='455'>455x455</option>
+		    <option value='450'>450x450</option>
+		    <option value='445'>445x445</option>
+		    <option value='440'>440x440</option>
+		    <option value='435'>435x435</option>
+		    <option value='430'>430x430</option>
+		    <option value='425'>425x425</option>
+		    <option value='420'>420x420</option>
+		    <option value='415'>415x415</option>
+		    <option value='410'>410x410</option>
+		    <option value='405'>405x405</option>
+		    <option value='400'>400x400</option>
+		    <option value='395'>395x395</option>
+		    <option value='390'>390x390</option>
+		    <option value='385'>385x385</option>
+		    <option value='380'>380x380</option>
+		    <option value='375'>375x375</option>
+		    <option value='370'>370x370</option>
+		    <option value='365'>365x365</option>
+		    <option value='360'>360x360</option>
+		    <option value='355'>355x355</option>
+		    <option value='350'>350x350</option>
+		    <option value='345'>345x345</option>
+		    <option value='340'>340x340</option>
+		    <option value='335'>335x335</option>
+		    <option value='330'>330x330</option>
+		    <option value='325'>325x325</option>
+		    <option value='320'>320x320</option>
+		    <option value='315'>315x315</option>
+		    <option value='310'>310x310</option>
+		    <option value='305'>305x305</option>
+		    <option value='300'>300x300</option>
+		    <option value='295'>295x295</option>
+		    <option value='290'>290x290</option>
+		    <option value='285'>285x285</option>
+		    <option value='280'>280x280</option>
+		    <option value='275'>275x275</option>
+		    <option value='270'>270x270</option>
+		    <option value='265'>265x265</option>
+		    <option value='260'>260x260</option>
+		    <option value='255'>255x255</option>
+		    <option value='250'>250x250</option>
+		    <option value='245'>245x245</option>
+		    <option value='240'>240x240</option>
+		    <option value='235'>235x235</option>
+		    <option value='230'>230x230</option>
+		    <option value='225'>225x225</option>
+		    <option value='220'>220x220</option>
+		    <option value='215'>215x215</option>
+		    <option value='210'>210x210</option>
+		    <option value='205'>205x205</option>
+		    <option value='200'>200x200</option>
+		    <option value='195'>195x195</option>
+		    <option value='190'>190x190</option>
+		    <option value='185'>185x185</option>
+		    <option value='180'>180x180</option>
+		    <option value='175'>175x175</option>
+		    <option value='170'>170x170</option>
+		    <option value='165'>165x165</option>
+		    <option value='160'>160x160</option>
+		    <option value='155'>155x155</option>
+		    <option value='150'>150x150</option>
+		    <option value='145'>145x145</option>
+		    <option value='140'>140x140</option>
+		    <option value='135'>135x135</option>
+		    <option value='130'>130x130</option>
+		    <option value='125'>125x125</option>
+		    <option value='120'>120x120</option>
+		    <option value='115'>115x115</option>
+		    <option value='110'>110x110</option>
+		    <option value='105'>105x105</option>
+		    <option value='100'>100x100</option>
+		    <option value='95'>95x95</option>
+		    <option value='90'>90x90</option>
+		    <option value='85'>85x85</option>
+		    <option value='80'>80x80</option>
 		    <option value='75'>75x75</option>
 		    <option value='70'>70x70</option>
 		    <option value='65'>65x65</option>
