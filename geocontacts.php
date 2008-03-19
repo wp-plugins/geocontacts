@@ -4,7 +4,7 @@ Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
 Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1.4
+Version: 0.1.5
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
@@ -15,6 +15,7 @@ Max WP Version: 2.5
 2008-03-13 - v0.1.2 - Interface clean up, Updated readme, Added screen shots
 2008-03-14 - v0.1.3 - Updated Gravatar size for larger 512 pixel Gravatars
 2008-03-15 - v0.1.4 - Interface clean ups in edit screen, solved Safari map display problem, added redraw map button, added physical maps
+2008-03-18 - v0.1.5 - Now save map type in record, move css to templates/geocontacts.css, zoom selection is now in the map only
 
 Copyright 2007-2008 [Modern Success, Inc.](http://www.glutenenvy.com/)
 
@@ -22,7 +23,7 @@ Commercial users are requested to, but not required to, contribute promotion,
 know-how, or money to plug-in development or to www.glutenenvy.com. 
 
 This is program is free software; you can redistribute it and/or modifyit under the terms of the GNU General Public License as published bythe Free Software Foundation; either version 2 of the License, or(at your option) any later version.This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty ofMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See theGNU General Public License for more details.You should have received a copy of the GNU General Public Licensealong with this program; if not, write to the Free SoftwareFoundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USAOnline: http://www.gnu.org/licenses/gpl.txt*/
-$geocontacts_version = '0.1.4';
+$geocontacts_version = '0.1.5';
 
 define('geocontacts_google_geocoder', 'http://maps.google.com/maps/geo?q=', false);
 define('geocontacts_google_regexp', "\<coordinates\>(.*),(.*),0\<\/coordinates\>");
@@ -51,20 +52,11 @@ function geocontacts_adminhead() {
 
 add_action('wp_head', 'geocontacts_wphead');
 function geocontacts_wphead() {
-	?>
-    <style type="text/css">
-      ol.geocontacts-list {list-style-type:none}
-      li.geocontacts-item {border:1px solid #666; padding:0.5em; margin:0.5em auto; width:99%; height:10em}
-      li.geocontacts-item .name {font-size:1.2em; font-weight:bolder}
-      li.geocontacts-item .photo {float:right}
-      li.geocontacts-item .address {display:block; margin-left:1em; width:50%; float:left; font-size:0.8em}
-      li.geocontacts-item .address span {display:block}
-    </style>
-    <?php
+	echo '<link type="text/css" rel="stylesheet" href="';
+	echo  get_bloginfo('wpurl') . '/wp-content/plugins/geocontacts/templates/geocontacts.css" >' . "\n";
+
 	echo geocontacts_html_note();
-//	echo geocontacts_geocode_header();
-//	echo geocontacts_javascript();
-} // end geocontacts_wphead()
+} 
 
 function geocontacts_html_note() {
     $scripts = "<!-- Location provided by GeoContacts v ".get_option("geocontacts_version")." (http://www.glutenenvy.com) -->\n";
@@ -426,7 +418,8 @@ function geocontacts_main() {
             notes         = '".$wpdb->escape($_POST['notes'])."',
             lat           = '".$wpdb->escape($_POST['lat'])."',
             lon           = '".$wpdb->escape($_POST['lon'])."',
-            zoom          = '".$wpdb->escape($_POST['zoom'])."'";
+            zoom          = '".$wpdb->escape($_POST['zoom'])."',
+            maptype       = '".$wpdb->escape($_POST['maptype'])."'";
         $wpdb->query($sql); ?>
         <div id="message" class="updated fade">
             <p><strong><?php _e('Address added'); ?>.</strong>
@@ -486,6 +479,7 @@ function geocontacts_main() {
                 lat           = '".$wpdb->escape($_POST['lat'])."',
                 lon           = '".$wpdb->escape($_POST['lon'])."',
                 zoom          = '".$wpdb->escape($_POST['zoom'])."',
+                maptype       = '".$wpdb->escape($_POST['maptype'])."',
                 website       = '".$wpdb->escape($_POST['website'])."'
                 WHERE id ='".$id."'");
             echo '<div id="message" class="updated fade">
@@ -598,6 +592,7 @@ function geocontacts_main() {
 					<input type='hidden' value='".stripslashes($row->lat)."' name='lat-".$row->id."' id='lat-".$row->id."' />
 					<input type='hidden' value='".stripslashes($row->lon)."' name='lon-".$row->id."' id='lon-".$row->id."' />
 					<input type='hidden' value='".stripslashes($row->zoom)."' name='zoom-".$row->id."' id='zoom-".$row->id."' />
+					<input type='hidden' value='".stripslashes($row->maptype)."' name='maptype-".$row->id."' id='maptype-".$row->id."' />
 					<input type='hidden' value='".stripslashes($row->website)."' name='website-".$row->id."' id='website-".$row->id."' />
                 </tr>";
             } ?>
@@ -750,12 +745,13 @@ function _geocontacts_getaddressform($data='null') {
 					<input type="text" name="lat" id="lat" value="'.stripslashes($data->lat).'" />
 				</div>
 				<div class="input" style="width:31%; margin-right:10px">
-					<label for="lat">'.__('Longitude:').'</label>
+					<label for="lon">'.__('Longitude:').'</label>
 					<input type="text" name="lon" id="lon" value="'.stripslashes($data->lon).'" />
 				</div>
 				<div class="input" style="width:31%">
-					<label for="lat">'.__('Zoom:').'</label>
+					<label for="zoom">'.__('Zoom:').'</label>
 					<input type="text" name="zoom" id="zoom" value="'.stripslashes($zoom).'" />
+					<input type="hidden" name="maptype" id="maptype" value="'.stripslashes($data->maptype).'" />
 				</div>
             </div>';
 	} else {
@@ -793,8 +789,6 @@ function _geocontacts_getaddressform($data='null') {
         </div>';
 		}
 	
-
-
 	if ($showmap==true) {
 	$out .= '
 	<p />
@@ -813,34 +807,37 @@ function _geocontacts_getaddressform($data='null') {
             </div>
 		</div>
         <div class="line">
-            <div class="input" style="width:95%">
-                <label for="zoom">'.__('Zoom:').'</label><br />';
-				$zoom = stripslashes($data->zoom);
-				$select = "<select name='zoom' id='zoom' onclick='geocontacts_savezoom();return false;'>
-						<option value='18'>18</option>
-						<option value='17'>17</option>
-						<option value='16'>16</option>
-						<option value='15'>15</option>
-						<option value='14'>14</option>
-						<option value='13'>13</option>
-						<option value='12'>12</option>
-						<option value='11'>11</option>
-						<option value='10'>10</option>
-						<option value='9'>9</option>
-						<option value='8'>8</option>
-						<option value='7'>7</option>
-						<option value='6'>6</option>
-						<option value='5'>5</option>
-						<option value='4'>4</option>
-						<option value='3'>3</option>
-						<option value='2'>2</option>
-						<option value='1'>1</option>
-					</select>";
-					$out .= str_replace("value='$zoom'","value='$zoom' selected='selected'", $select);
+            <div class="input" style="width:95%">';
+                //<label for="zoom">'.__('Zoom:').'</label><br />';
+//				$zoom = stripslashes($data->zoom);
+//				$select = "<select name='zoom' id='zoom' onclick='geocontacts_savezoom();return false;'>
+//						<option value='19'>19</option>
+//						<option value='18'>18</option>
+//						<option value='17'>17</option>
+//						<option value='16'>16</option>
+//						<option value='15'>15</option>
+//						<option value='14'>14</option>
+//						<option value='13'>13</option>
+//						<option value='12'>12</option>
+//						<option value='11'>11</option>
+//						<option value='10'>10</option>
+//						<option value='9'>9</option>
+//						<option value='8'>8</option>
+//						<option value='7'>7</option>
+//						<option value='6'>6</option>
+//						<option value='5'>5</option>
+//						<option value='4'>4</option>
+//						<option value='3'>3</option>
+//						<option value='2'>2</option>
+//						<option value='1'>1</option>
+//					</select>";
+//					$out .= str_replace("value='$zoom'","value='$zoom' selected='selected'", $select);
 				
 	$out .= '		
+					<input type="hidden" name="zoom" id="zoom" value="'.stripslashes($data->zoom).'" />
 					&nbsp;[ <a href="#" onclick="geocontacts_redrawmap();return false;" title="Redraw map with these coordinates" 
 				       	id="redraw">Redraw map</a> ]	
+					<input type="hidden" name="maptype" id="maptype" value="'.stripslashes($data->maptype).'" />
             </div>
         </div>
         <div class="line">
@@ -849,7 +846,8 @@ function _geocontacts_getaddressform($data='null') {
 				<span>A single click selects new cordinates.
 				A double-click will zoom in a level and set a new coordinate location.
 				Drag the map using your mouse with a held click.
-				Use the drop down box or map controls to zoom in and out.</span>
+				Use the map controls for zooming the map. 
+				The maximum zoom level is dependent on the map type.</span>
             </div>
         </div>
 	</div>
@@ -860,7 +858,7 @@ function _geocontacts_getaddressform($data='null') {
 	<script type="text/javascript">
     //<![CDATA[
 	// load up the first map in the edit screen
-	geocontacts_showmap (document.getElementById("lat").value, document.getElementById("lon").value, document.getElementById("zoom").value);
+	geocontacts_showmap (document.getElementById("lat").value,document.getElementById("lon").value,document.getElementById("zoom").value,document.getElementById("maptype").value);
 	geocontacts_geocode_finetune (); 
 	//]]>
     </script>
@@ -892,6 +890,7 @@ function _geocontacts_install() {
 		lat VARCHAR(15) NOT NULL,
 		lon VARCHAR(15) NOT NULL,
 		zoom tinyint NOT NULL,
+		maptype tinytext NOT NULL,
 		notes tinytext NOT NULL,
 		PRIMARY KEY  (id)
 	);";
@@ -969,13 +968,14 @@ function geocontacts_list($content) {
 			$id = "";
 		}
 		// check second part of input string
+		$template_src=false;
 		if( $mylist[1]!=null ) {
 			// no security checks for wild files / be sure your posters can be trusted
 			$template_src = file_get_contents(dirname(__FILE__) .'/templates/'.$mylist[1]);	
-		} else {
-			// File portion not found in anchor use the default filename
-			$template_src = file_get_contents(dirname(__FILE__) .'/templates/default.htm');	
 		}
+		if ($template_src==false) {
+			$template_src = file_get_contents(dirname(__FILE__) .'/templates/default.htm');	
+		}	
 		
 		$sql = "SELECT * FROM ".$wpdb->prefix."geocontacts ORDER BY ".get_settings('geocontacts_sort_by', true);
 		$results = $wpdb->get_results($sql);
@@ -989,7 +989,12 @@ function geocontacts_list($content) {
 		// http://maps.google.com/?ie=UTF8&z=14&t=h&q=21.26186090589837,-157.80624389648437
 		$googlemap1 = "http://maps.google.com/?ie=UTF8&amp;z=";
 		$googlemap2 = "&amp;t=h&amp;q=";
-				
+		// &t=k satellite
+		// &t=h hybrid
+		// &t=p terrain
+		// &layer=t traffic
+		// &layer=c street view
+							
 		// template codes 
 		$findme[0] = "{\$gravatar}";
 		$findme[1] = "{\$first_name}";
@@ -1011,6 +1016,18 @@ function geocontacts_list($content) {
 		$findme[17] = "{\$mapsite}";
 		
 		foreach ($results as $row) {
+			$mt = stripslashes($row->maptype);
+			if ( $mt == "G_HYBRID_MAP" ) {
+				$googlemap2 = "&amp;t=h&amp;q=";
+			} else if ( $mt == "G_PHYSICAL_MAP" ) {
+				$googlemap2 = "&amp;t=p&amp;q=";
+			} else if ( $mt == "G_SATELLITE_MAP" ) {
+				$googlemap2 = "&amp;t=k&amp;q=";
+			} else {
+				// G_NORMAL_MAP
+				$googlemap2 = "&amp;q=";
+			}
+			
 			$changeto[0] = geocontacts_getIfNotEmpty("%s",geocontacts_gravatar(stripslashes($row->email)));
 			$changeto[1] = geocontacts_getIfNotEmpty("%s",stripslashes($row->first_name));
 			$changeto[2] = geocontacts_getIfNotEmpty("%s",stripslashes($row->last_name));

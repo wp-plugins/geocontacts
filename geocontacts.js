@@ -14,16 +14,18 @@ var geocontacts_map;
 var geocontacts_marker;
 var geocontacts_point;
 var geocontacts_marker_exists=false;
+var geocontacts_maxmap;
+var geocontacts_minmap;
 
-function geocontacts_createmarker(lat,lon){
+function geocontacts_createmarker(lat,lon) {
 
-        if(geocontacts_marker_exists==true) {
-                geocontacts_deletemarker();
-        } 
-        // we're making a new one below
-        geocontacts_marker_exists=true;
+	if(geocontacts_marker_exists==true) {
+		geocontacts_deletemarker();
+	} 
+	// we're making a new one below
+	geocontacts_marker_exists=true;
         
-        geocontacts_point = new GLatLng(parseFloat(lat),parseFloat(lon));
+	geocontacts_point = new GLatLng(parseFloat(lat),parseFloat(lon));
 
 	geocontacts_marker = new GMarker(geocontacts_point);
         
@@ -41,17 +43,60 @@ function geocontacts_deletemarker(){
 }
 
 function geocontacts_savezoom() {
-        zoom = parseInt(document.getElementById("zoom").value);
+	zoom = parseInt(document.getElementById("zoom").value);
 	geocontacts_map.setZoom(zoom);
 }       
+
+function geocontacts_getzoommaxmin() {
+
+	if ( document.getElementById("maptype").value == "G_SATELLITE_MAP" ) {
+		geocontacts_maxmap = G_SATELLITE_MAP.getMaximumResolution();
+		geocontacts_minmap = G_SATELLITE_MAP.getMinimumResolution();
+	} else if ( document.getElementById("maptype").value == "G_HYBRID_MAP" ) {
+		geocontacts_maxmap = G_HYBRID_MAP.getMaximumResolution();
+		geocontacts_minmap = G_HYBRID_MAP.getMinimumResolution();
+	} else if ( document.getElementById("maptype").value == "G_PHYSICAL_MAP" ) {
+		geocontacts_maxmap = G_PHYSICAL_MAP.getMaximumResolution();
+		geocontacts_minmap = G_PHYSICAL_MAP.getMinimumResolution();
+	} else {
+		// G_NORMAL_MAP
+		geocontacts_maxmap = G_NORMAL_MAP.getMaximumResolution();
+		geocontacts_minmap = G_NORMAL_MAP.getMinimumResolution();
+	}
+}
+	
+
+function geocontacts_setzoom(newLevel) {
+	// keep from zooming in the maximum 'map' level - other map types can be more detailed
+	document.getElementById("zoom").value = newLevel;
+	if (newLevel > geocontacts_maxmap) {
+		document.getElementById("zoom").value = geocontacts_maxmap;
+	} else if (newLevel < geocontacts_minmap) {
+		document.getElementById("zoom").value = geocontacts_minmap;
+	}
+}
 
 
 function geocontacts_geocode_finetune() {
   
-	GEvent.addListener(geocontacts_map, 'zoomend', function() {
-		// keep from zooming in the maximum 'map' level - other map types can be more detailed
-		if (geocontacts_map.getZoom() <= 18) {
-			document.getElementById("zoom").value = geocontacts_map.getZoom();
+	GEvent.addListener(geocontacts_map, 'maptypechanged', function() {
+		var maptype = geocontacts_map.getCurrentMapType();
+		if (maptype == G_NORMAL_MAP ) {
+			document.getElementById("maptype").value = "G_NORMAL_MAP";
+		} else if (maptype == G_HYBRID_MAP ) {
+			document.getElementById("maptype").value = "G_HYBRID_MAP";
+		} else if (maptype == G_PHYSICAL_MAP ) {
+			document.getElementById("maptype").value = "G_PHYSICAL_MAP";
+		} else if (maptype == G_SATELLITE_MAP ) {
+			document.getElementById("maptype").value = "G_SATELLITE_MAP";
+		} 
+		geocontacts_getzoommaxmin();
+	});
+	  
+	GEvent.addListener(geocontacts_map, 'zoomend', function(oldLevel, newLevel) {
+		if(newLevel) {
+			geocontacts_getzoommaxmin();
+			geocontacts_setzoom(newLevel);
 		}
 	});
 
@@ -84,6 +129,7 @@ function click_contact(row, id) {
 	var lon=document.getElementById('lon-'+id).value;
 	var zoom=document.getElementById('zoom-'+id).value;
 	var website=document.getElementById('website-'+id).value;
+	var maptype=document.getElementById('maptype-'+id).value;
 
 	document.getElementById('contact-info').innerHTML=document.getElementById('contact-'+id+'-info').innerHTML;
 
@@ -103,6 +149,7 @@ function click_contact(row, id) {
 	document.getElementById('lon').value=lon;
 	document.getElementById('zoom').value=zoom;
 	document.getElementById('website').value=website;
+	document.getElementById('maptype').value=maptype;
 }
 
 function geocontacts_round(num,decimals) {
@@ -168,9 +215,19 @@ function geocontacts_geocode () {
 	}
 }
 
-function geocontacts_adjustmap(lat,lon,zoom) {
+function geocontacts_adjustmap(lat,lon,zoom,maptype) {
 	// Center the map on this point
-	geocontacts_map.setCenter(geocontacts_point, parseInt(zoom), G_HYBRID_MAP);
+	//geocontacts_map.setCenter(geocontacts_point, parseInt(zoom));
+
+	if (maptype == "G_SATELLITE_MAP" ) {
+		geocontacts_map.setCenter(geocontacts_point, parseInt(zoom), G_SATELLITE_MAP);
+	} else if (maptype == "G_HYBRID_MAP" ) {
+		geocontacts_map.setCenter(geocontacts_point, parseInt(zoom), G_HYBRID_MAP);
+	} else if (maptype == "G_PHYSICAL_MAP" ) {
+		geocontacts_map.setCenter(geocontacts_point, parseInt(zoom), G_PHYSICAL_MAP);
+	} else {
+		geocontacts_map.setCenter(geocontacts_point, parseInt(zoom));
+	} 
 	
 	// Create a marker
 	geocontacts_createmarker(lat,lon);
@@ -189,7 +246,7 @@ function geocontacts_redrawmap() {
 }
 
 
-function geocontacts_showmap (lat, lon, zoom) {
+function geocontacts_showmap (lat, lon, zoom, maptype) {
         // decimal coordinates have a maximum
         // 90 to -90 for latitude (90 North Pole, -90 South Pole)
         // 180 -180 for longitude (180 -180 should be the same spot around)
@@ -248,7 +305,7 @@ function geocontacts_showmap (lat, lon, zoom) {
 	geocontacts_map.addControl(new GMapTypeControl(1)); 
 	geocontacts_map.addControl(new GLargeMapControl()); 
 	
-	geocontacts_adjustmap(mylat,mylon,zoom);
+	geocontacts_adjustmap(mylat,mylon,zoom,maptype);
 	
 	// safari browsers do not init like firefox and ie. 
 	// redraw the map in a few seconds to get initial map display on safari

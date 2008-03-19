@@ -5,7 +5,7 @@ Tags: contacts, contact list, lists, addresses, address list, geocode, latitude,
 Requires at least: 2.2
 Tested up to: 2.5
 Stable tag: trunk
-Version: 0.1.4
+Version: 0.1.5
 
 == Description ==
 
@@ -27,9 +27,10 @@ GeoContacts features:
 * Optional top level administrative menus
 * Optional Google maps link url with your coordinates in template display. Hot!
 
-Version 0.1.3 Adds support for the new 512 pixel Gravatars
-Version 0.1.4 Solves map display problem on Safari, adds physical maps
+* Version 0.1.3 Adds support for the new 512 pixel Gravatars
+* Version 0.1.4 Solves map display problem on Safari, adds physical maps
   adds a redraw map button, and adds some help in the edit screen
+* Version 0.1.5 Selected map type is now saved in the GeoContact record. CSS is now in templates/geocontacts.css. Maximum zoom size is dynamic depending on map type. Zoom selection is now done only through the slider on the map.
 
 == Installation ==
 
@@ -46,21 +47,21 @@ There is no need to de-activate and then re-activate this plug-in to upgrade.
 
 == Frequently Asked Questions ==
 
-Why don't I see a map in the edit screen?
-You must install a valid Google key in options first. It is free.
+* Why don't I see a map in the edit screen?
+* You must install a valid Google key in options first. It is free.
 
-Google is evil. Can I use GeoContacts without installing a Google key?
-You can use GeoContacts without a Google key. However you will not have geoencoding available.
+* Google is evil. Can I use GeoContacts without installing a Google key?
+* You can use GeoContacts without a Google key. However you will not have geoencoding available.
 
-I can't find the templates. 
-Templates are located in the template subfolder of this plug-in.
+* I can't find the templates. 
+* Templates are located in the template subfolder of this plug-in.
 
-I made this really awesome template but it was named default.htm. I installed the plug-in update and now I 
+*I made this really awesome template but it was named default.htm. I installed the plug-in update and now I 
 only have the template that came with the plug-in.
-It is recommended that if you make changes, or create new templates that you back them up.
+* It is recommended that if you make changes, or create new templates that you back them up.
 
-How do I change the sort order of my contact list when I display it on my site?
-Change the 'Sort full contact list display by' option.
+* How do I change the sort order of my contact list when I display it on my site?
+* Change the 'Sort full contact list display by' option.
 
 == Screenshots ==
 

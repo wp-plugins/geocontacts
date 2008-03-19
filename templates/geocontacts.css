@@ -1,0 +1,6 @@
+ol.geocontacts-list {list-style-type:none}
+li.geocontacts-item {border:1px solid #666; padding:0.5em; margin:0.5em auto; width:99%; height:10em}
+li.geocontacts-item .name {font-size:1.2em; font-weight:bolder}
+li.geocontacts-item .photo {float:right}
+li.geocontacts-item .address {display:block; margin-left:1em; width:50%; float:left; font-size:0.8em}
+li.geocontacts-item .address span {display:block}
