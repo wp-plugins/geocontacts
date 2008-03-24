@@ -5,7 +5,7 @@ Tags: contacts, contact list, lists, addresses, address list, geocode, latitude,
 Requires at least: 2.2
 Tested up to: 2.5
 Stable tag: trunk
-Version: 0.1.5
+Version: 0.2.0
 
 == Description ==
 
@@ -25,12 +25,16 @@ GeoContacts features:
 * Multiple templates per post support
 * hCard microformat template included
 * Optional top level administrative menus
-* Optional Google maps link url with your coordinates in template display. Hot!
+* Optional link urls to Google, Yahoo, and Live maps with your coordinates. Hot!
+* Display a Google map to your readers without loading Googles javascript
 
-* Version 0.1.3 Adds support for the new 512 pixel Gravatars
+Recent Updates
+* Version 0.2.0 Introduces new anchors: {$googlekey} {$googlemap} {$googlesite} {$yahoosite} {$livesite}. New templates added, googlemap.htm and contactandmap.htm(default.htm). You asked for maps, now you have them. Recursion error solved. {$mapsite} is now selectable in options. Added link back footer which can be disabled in options.
+* Version 0.1.5 Selected map type is now saved in the GeoContact record. CSS is now in templates/geocontacts.css. Maximum zoom size is dynamic depending on map type. Zoom selection is now done only through the slider on the map.
 * Version 0.1.4 Solves map display problem on Safari, adds physical maps
   adds a redraw map button, and adds some help in the edit screen
-* Version 0.1.5 Selected map type is now saved in the GeoContact record. CSS is now in templates/geocontacts.css. Maximum zoom size is dynamic depending on map type. Zoom selection is now done only through the slider on the map.
+* Version 0.1.3 Adds support for the new 512 pixel Gravatars
+
 
 == Installation ==
 
@@ -62,6 +66,9 @@ only have the template that came with the plug-in.
 
 * How do I change the sort order of my contact list when I display it on my site?
 * Change the 'Sort full contact list display by' option.
+
+* I have double checked my anchor and it is correctly formatted like GEOCONTACT[1], why wont it display?
+* Make sure you have a record id #1. All GeoContacts processing stops when an anchor with an invalid is provided. Check and make sure the whole post has valid anchors.
 
 == Screenshots ==
 

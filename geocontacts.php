@@ -4,7 +4,7 @@ Plugin Name: GeoContacts
 Plugin Script: geocontacts.php
 Plugin URI: http://www.glutenenvy.com/software/geocontacts
 Description: Geoencode addresses with built-in contact Gravatar support. Build templates and embed addresses in a post or page with the GEOCONTACT[] anchor.
-Version: 0.1.5
+Version: 0.2.0
 License: GPL
 Author: Ben King
 Author URI: http://www.glutenenvy.com/
@@ -16,6 +16,10 @@ Max WP Version: 2.5
 2008-03-14 - v0.1.3 - Updated Gravatar size for larger 512 pixel Gravatars
 2008-03-15 - v0.1.4 - Interface clean ups in edit screen, solved Safari map display problem, added redraw map button, added physical maps
 2008-03-18 - v0.1.5 - Now save map type in record, move css to templates/geocontacts.css, zoom selection is now in the map only
+2008-03-23 - v0.2.0 - Now dispays Google map in templates, {$yahoosite} {$livesite} {$googlesite} new link types, 
+                      {$mapsite} is now set in options, added recursion check, added {$googlemap} and {$googlekey} anchors
+                      Added optional link back footer.
+
 
 Copyright 2007-2008 [Modern Success, Inc.](http://www.glutenenvy.com/)
 
@@ -23,7 +27,9 @@ Commercial users are requested to, but not required to, contribute promotion,
 know-how, or money to plug-in development or to www.glutenenvy.com. 
 
 This is program is free software; you can redistribute it and/or modifyit under the terms of the GNU General Public License as published bythe Free Software Foundation; either version 2 of the License, or(at your option) any later version.This program is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty ofMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See theGNU General Public License for more details.You should have received a copy of the GNU General Public Licensealong with this program; if not, write to the Free SoftwareFoundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USAOnline: http://www.gnu.org/licenses/gpl.txt*/
-$geocontacts_version = '0.1.5';
+$geocontacts_version = '0.2.0';
+$geocontacts_googlekey = '';
+
 
 define('geocontacts_google_geocoder', 'http://maps.google.com/maps/geo?q=', false);
 define('geocontacts_google_regexp', "\<coordinates\>(.*),(.*),0\<\/coordinates\>");
@@ -46,6 +52,7 @@ function geocontacts_adminhead() {
     </style>
     <?php
 	echo geocontacts_html_note();
+	geocontacts_getgooglekey();
     echo geocontacts_geocode_header();
     echo geocontacts_javascript();
 }
@@ -54,8 +61,8 @@ add_action('wp_head', 'geocontacts_wphead');
 function geocontacts_wphead() {
 	echo '<link type="text/css" rel="stylesheet" href="';
 	echo  get_bloginfo('wpurl') . '/wp-content/plugins/geocontacts/templates/geocontacts.css" >' . "\n";
-
 	echo geocontacts_html_note();
+	geocontacts_getgooglekey();
 } 
 
 function geocontacts_html_note() {
@@ -65,13 +72,22 @@ function geocontacts_html_note() {
 }
 
 function geocontacts_geocode_header() {
-    $scripts = "";
-
-	$google_apikey = get_settings('geocontacts_google_apikey', true);
-	if($google_apikey != "") {
-		$scripts .= "\n".'<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key='. $google_apikey .'" ></script>';
+	global $geocontacts_googlekey;
+	$scripts = "";
+	if($geocontacts_googlekey != "") {
+		$scripts = "\n".'<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key='. $geocontacts_googlekey .'" ></script>';
 	}
 	return $scripts;
+}
+
+function geocontacts_getgooglekey() {
+	global $geocontacts_googlekey;
+
+	$geocontacts_googlekey = get_settings('geocontacts_google_apikey', true);
+	if($geocontacts_googlekey != "") {
+		return false;
+	}
+	return true;
 }
 
 function geocontacts_javascript() {
@@ -113,8 +129,14 @@ function geocontacts_options() {
     $gravatar_rating = get_settings('geocontacts_gravatar_rating', true);
     $gravatar_size = get_settings('geocontacts_gravatar_size', true);
     $gravatar_image = get_settings('geocontacts_gravatar_image', true);
+    
+    $gmapx = get_settings('geocontacts_gmapx', true);
+    $gmapy = get_settings('geocontacts_gmapy', true);
+    $mapsite = get_settings('geocontacts_mapsite', true);
 
     $sort_by = get_settings('geocontacts_sort_by', true);
+
+    $displayhomelink = get_settings('geocontacts_displayhomelink', true) ? 'checked="checked"' : '';
 
 	?>
 	<div class="wrap">
@@ -141,6 +163,25 @@ function geocontacts_options() {
 		   target="_blank" title="GoogleMaps API Registration"> Get your GoogleMaps API Key here</a><br />
 		<input name="geocontacts_google_apikey" type="text" id="geocontacts_google_apikey" style="width: 95%"
 			   value="<?php echo $google_apikey ?>" size="45" />
+	</p>
+	<p>
+		<?php _e('Select x and y dimensions for static Google maps: ') ?>
+		<input name="geocontacts_gmapx" type="text" id="geocontacts_gmapx" style="width: 50px"
+			   value="<?php echo $gmapx ?>" size="6" />
+		<input name="geocontacts_gmapy" type="text" id="geocontacts_gmapy" style="width: 50px"
+			   value="<?php echo $gmapy ?>" size="6" />
+	</p>
+	<p>
+		<?php _e('Map Provider for the {$mapsite} anchor: ') ?>
+		<select name="geocontacts_mapsite" id="geocontacts_mapsite">
+		<?php
+		    $select = "
+		    <option value='Google'>Google</option>
+		    <option value='Yahoo'>Yahoo</option>
+		    <option value='Live'>Live</option>";
+		    echo str_replace("value='$mapsite'","value='$mapsite' selected='selected'", $select);
+		?>
+		</select>
 	</p>
 <?php
 /*	
@@ -176,110 +217,10 @@ function geocontacts_options() {
 		<?php _e('Size Gravatars to: ') ?>
 		<select name="geocontacts_gravatar_size" id="geocontacts_gravatar_size">
 		<?php
-		    $select = "
-		    <option value='512'>512x512</option>
-		    <option value='510'>510x510</option>
-		    <option value='505'>505x505</option>
-		    <option value='500'>500x500</option>
-		    <option value='495'>495x495</option>
-		    <option value='490'>490x490</option>
-		    <option value='485'>485x485</option>
-		    <option value='480'>480x480</option>
-		    <option value='475'>475x475</option>
-		    <option value='470'>470x470</option>
-		    <option value='465'>465x465</option>
-		    <option value='460'>460x460</option>
-		    <option value='455'>455x455</option>
-		    <option value='450'>450x450</option>
-		    <option value='445'>445x445</option>
-		    <option value='440'>440x440</option>
-		    <option value='435'>435x435</option>
-		    <option value='430'>430x430</option>
-		    <option value='425'>425x425</option>
-		    <option value='420'>420x420</option>
-		    <option value='415'>415x415</option>
-		    <option value='410'>410x410</option>
-		    <option value='405'>405x405</option>
-		    <option value='400'>400x400</option>
-		    <option value='395'>395x395</option>
-		    <option value='390'>390x390</option>
-		    <option value='385'>385x385</option>
-		    <option value='380'>380x380</option>
-		    <option value='375'>375x375</option>
-		    <option value='370'>370x370</option>
-		    <option value='365'>365x365</option>
-		    <option value='360'>360x360</option>
-		    <option value='355'>355x355</option>
-		    <option value='350'>350x350</option>
-		    <option value='345'>345x345</option>
-		    <option value='340'>340x340</option>
-		    <option value='335'>335x335</option>
-		    <option value='330'>330x330</option>
-		    <option value='325'>325x325</option>
-		    <option value='320'>320x320</option>
-		    <option value='315'>315x315</option>
-		    <option value='310'>310x310</option>
-		    <option value='305'>305x305</option>
-		    <option value='300'>300x300</option>
-		    <option value='295'>295x295</option>
-		    <option value='290'>290x290</option>
-		    <option value='285'>285x285</option>
-		    <option value='280'>280x280</option>
-		    <option value='275'>275x275</option>
-		    <option value='270'>270x270</option>
-		    <option value='265'>265x265</option>
-		    <option value='260'>260x260</option>
-		    <option value='255'>255x255</option>
-		    <option value='250'>250x250</option>
-		    <option value='245'>245x245</option>
-		    <option value='240'>240x240</option>
-		    <option value='235'>235x235</option>
-		    <option value='230'>230x230</option>
-		    <option value='225'>225x225</option>
-		    <option value='220'>220x220</option>
-		    <option value='215'>215x215</option>
-		    <option value='210'>210x210</option>
-		    <option value='205'>205x205</option>
-		    <option value='200'>200x200</option>
-		    <option value='195'>195x195</option>
-		    <option value='190'>190x190</option>
-		    <option value='185'>185x185</option>
-		    <option value='180'>180x180</option>
-		    <option value='175'>175x175</option>
-		    <option value='170'>170x170</option>
-		    <option value='165'>165x165</option>
-		    <option value='160'>160x160</option>
-		    <option value='155'>155x155</option>
-		    <option value='150'>150x150</option>
-		    <option value='145'>145x145</option>
-		    <option value='140'>140x140</option>
-		    <option value='135'>135x135</option>
-		    <option value='130'>130x130</option>
-		    <option value='125'>125x125</option>
-		    <option value='120'>120x120</option>
-		    <option value='115'>115x115</option>
-		    <option value='110'>110x110</option>
-		    <option value='105'>105x105</option>
-		    <option value='100'>100x100</option>
-		    <option value='95'>95x95</option>
-		    <option value='90'>90x90</option>
-		    <option value='85'>85x85</option>
-		    <option value='80'>80x80</option>
-		    <option value='75'>75x75</option>
-		    <option value='70'>70x70</option>
-		    <option value='65'>65x65</option>
-		    <option value='60'>60x60</option>
-		    <option value='55'>55x55</option>
-		    <option value='50'>50x50</option>
-		    <option value='45'>45x45</option>
-		    <option value='40'>40x40</option>
-		    <option value='35'>35x35</option>
-		    <option value='30'>30x30</option>
-		    <option value='25'>25x25</option>
-		    <option value='20'>20x20</option>
-		    <option value='15'>15x15</option>
-		    <option value='10'>10x10</option>
-		    <option value='5'>5x5</option>";
+			$select = "<option value='512'>512x512</option>\n";
+		    for ($pix = 510; $pix >= 5; $pix -= 5) {
+				$select .= "		<option value='".$pix."'>".$pix."x".$pix."</option>\n";
+		    }
 		    echo str_replace("value='$gravatar_size'","value='$gravatar_size' selected='selected'", $select);
 		?>
 		</select>
@@ -313,11 +254,16 @@ function geocontacts_options() {
 		?>
 		</select>
 	</p>
+	<p>
+	  <?php _e('Please leave this box checked to show your support for GeoContacts. Enable GeoContacts site link: '); ?>
+      <input type="checkbox" id="geocontacts_displayhomelink" name="geocontacts_displayhomelink" 
+		     value="true" <?php echo $displayhomelink ?> />
+	</p>
 	
 	<p class="submit">
 	<input type="hidden" name="action" value="update" />
 	<input type="hidden" name="page_options" 
-	value="geocontacts_toplevelmenu,geocontacts_rss_enable,geocontacts_rss_format,geocontacts_google_apikey,geocontacts_gravatar_enable,geocontacts_gravatar_rating,geocontacts_gravatar_size,geocontacts_gravatar_image,geocontacts_garmin_apikey,geocontacts_sort_by" />
+	value="geocontacts_toplevelmenu,geocontacts_rss_enable,geocontacts_rss_format,geocontacts_google_apikey,geocontacts_gravatar_enable,geocontacts_gravatar_rating,geocontacts_gravatar_size,geocontacts_gravatar_image,geocontacts_garmin_apikey,geocontacts_sort_by,geocontacts_gmapx,geocontacts_gmapy,geocontacts_mapsite,geocontacts_displayhomelink" />
 
 	<input type="submit" name="submit" value="<?php _e('Update Options'); ?> &raquo" />
 	</p>
@@ -339,7 +285,7 @@ function geocontacts_docs() {
   <em>GEOCONTACT[*]</em> - To display the entire contact list<br />
   <em>GEOCONTACT[1]</em> - To display one contact by its id #<br /></p>
   <p>GeoContacts supports Gravatars. Several options are available to tailer Gravatar use for your 
-  website. Blank.gif is automatically provided for the default image when there is no Gravatar available for a 
+  website. Empty.gif is automatically provided for the default image when there is no Gravatar available for a 
   contact. You can also choose your own site default Gravatar by supplying a valid image url. Please note that this image 
   will not be resized, so pick an image with a reasonable size. Preferably this image will match 
   the size of Gravatar you have chosen in the options.</p>
@@ -381,7 +327,13 @@ function geocontacts_docs() {
   {$lat} = geocoded latitude<br /> 
   {$lon} = geocoded longitude<br />
   {$zoom} = selected zoom level<br />
-  {$mapsite} = url to map provider</p>
+  {$mapsite} = url to map provider<br />
+  {$googlekey} = your Google key<br />
+  {$googlemap} = static Google map image from google<br />
+  {$googlesite} = url to Google maps<br />
+  {$yahoosite} = url to Yahoo maps<br />
+  {$livesite} = url to Live maps<br />
+  {$mapsite} = url to map provider selected in options</p>
   <p>Multiple anchors can be listed per page. With some creative GeoContacts templates you can make a robust 
   review site for restaurants, hotels, and other destinations. You can make your own geocaching site or simply 
   make a contact list of friends and family. You have control of the templates so you can also
@@ -909,7 +861,10 @@ function _geocontacts_install() {
     add_option('geocontacts_gravatar_size', "80");
     add_option('geocontacts_gravatar_image', "");
     add_option('geocontacts_sort_by', "last_name");
-
+    add_option('geocontacts_gmapx', "400");
+    add_option('geocontacts_gmapy', "150");
+    add_option('geocontacts_mapsite', "Google");
+    add_option('geocontacts_displayhomelink', "true");
 }
 
 /**
@@ -958,8 +913,12 @@ function geocontacts_getFullnameFromId($id) {
 add_filter('the_content', 'geocontacts_list');
 function geocontacts_list($content) {
 	global $wpdb;
-
+	
 	if ( preg_match("/GEOCONTACT\[(.*)\]/", $content, $matches) ) {
+		$found = false;
+		$mapsite = get_settings('geocontacts_mapsite', true);
+		$gmapx = get_settings('geocontacts_gmapx', true);
+		$gmapy = get_settings('geocontacts_gmapy', true);
 		// parse match string
 		$mylist = explode(',',$matches[1],2);
 		if ( $mylist[0]!=null ) {
@@ -985,16 +944,7 @@ function geocontacts_list($content) {
 
 		$out = $listheader;
 		$single = "";
-
-		// http://maps.google.com/?ie=UTF8&z=14&t=h&q=21.26186090589837,-157.80624389648437
-		$googlemap1 = "http://maps.google.com/?ie=UTF8&amp;z=";
-		$googlemap2 = "&amp;t=h&amp;q=";
-		// &t=k satellite
-		// &t=h hybrid
-		// &t=p terrain
-		// &layer=t traffic
-		// &layer=c street view
-							
+		
 		// template codes 
 		$findme[0] = "{\$gravatar}";
 		$findme[1] = "{\$first_name}";
@@ -1013,21 +963,15 @@ function geocontacts_list($content) {
 		$findme[14] = "{\$lat}";
 		$findme[15] = "{\$lon}";
 		$findme[16] = "{\$zoom}";
-		$findme[17] = "{\$mapsite}";
+		$findme[17] = "{\$googlekey}";
+		$findme[18] = "{\$googlemap}";
+		$findme[19] = "{\$yahoosite}";
+		$findme[20] = "{\$livesite}";
+		$findme[21] = "{\$googlesite}";
+		$findme[22] = "{\$mapsite}";
 		
 		foreach ($results as $row) {
 			$mt = stripslashes($row->maptype);
-			if ( $mt == "G_HYBRID_MAP" ) {
-				$googlemap2 = "&amp;t=h&amp;q=";
-			} else if ( $mt == "G_PHYSICAL_MAP" ) {
-				$googlemap2 = "&amp;t=p&amp;q=";
-			} else if ( $mt == "G_SATELLITE_MAP" ) {
-				$googlemap2 = "&amp;t=k&amp;q=";
-			} else {
-				// G_NORMAL_MAP
-				$googlemap2 = "&amp;q=";
-			}
-			
 			$changeto[0] = geocontacts_getIfNotEmpty("%s",geocontacts_gravatar(stripslashes($row->email)));
 			$changeto[1] = geocontacts_getIfNotEmpty("%s",stripslashes($row->first_name));
 			$changeto[2] = geocontacts_getIfNotEmpty("%s",stripslashes($row->last_name));
@@ -1045,15 +989,26 @@ function geocontacts_list($content) {
 			$changeto[14] = geocontacts_getIfNotEmpty("%s",stripslashes($row->lat));
 			$changeto[15] = geocontacts_getIfNotEmpty("%s",stripslashes($row->lon));
 			$changeto[16] = geocontacts_getIfNotEmpty("%s",stripslashes($row->zoom));
-			$changeto[17] = geocontacts_getIfNotEmpty("%s",$googlemap1.stripslashes($row->zoom).$googlemap2.stripslashes($row->lat).",".stripslashes($row->lon));
-
+			$changeto[17] = $geocontacts_googlekey;
+			$changeto[18] = geocontacts_buildgooglemap(stripslashes($row->lat),stripslashes($row->lon),stripslashes($row->zoom),$gmapx,$gmapy);
+			$changeto[19] = geocontacts_buildyahoosite(stripslashes($row->lat),stripslashes($row->lon),stripslashes($row->zoom),stripslashes($row->maptype));
+			$changeto[20] = geocontacts_buildlivesite(stripslashes($row->lat),stripslashes($row->lon),stripslashes($row->zoom),stripslashes($row->maptype));
+			$changeto[21] = geocontacts_buildgooglesite(stripslashes($row->lat),stripslashes($row->lon),stripslashes($row->zoom),stripslashes($row->maptype));
+			if ( $mapsite == "Google" ) {
+				$changeto[22] = $changeto[21];
+			} else if ($mapsite == "Yahoo" ) {
+				$changeto[22] = $changeto[19];
+			} else if ($mapsite == "Live" ) {
+				$changeto[22] = $changeto[20];
+			} 
 			
 			$contact = str_replace($findme, $changeto, $template_src);
 
 			$out .= $contact;
 
 			// id found now process the changes in the content stream
-			if( $row->id == $id ) {		
+			if( $row->id == $id ) {
+				$found = true;		
 				$single = $listheader . $contact . $listfooter;
 				$searchfor = "/".quotemeta($matches[0])."/";
 				$content = preg_replace($searchfor, $single, $content);
@@ -1062,16 +1017,114 @@ function geocontacts_list($content) {
 		$out .= $listfooter;
 		// check for all contacts condition 
 		if ( $id == "*" ) {
+			$found = true;
 			$searchfor = "/".quotemeta($matches[0])."/";		
 			$content = preg_replace($searchfor, $out, $content);
 		}
 	}
 	// Check for other anchors to update
 	// recursive call could mean resource trouble
-	if ( preg_match("/GEOCONTACT\[(.*)\]/", $content, $matches) ) {
+	if ( preg_match("/GEOCONTACT\[(.*)\]/", $content, $matches) && $found ) {
 		return geocontacts_list($content);
+	} else if( get_settings('geocontacts_displayhomelink', true) ) {
+		$content .= "<font size=1><center>GeoContacts provided by <a href='http://www.glutenenvy.com'>GlutenEnvy.com</a></center></font>";
 	}
+	
 	return $content;
+}
+
+function geocontacts_buildgooglemap($lat,$lon,$zoom,$sizex,$sizey) {
+	global $geocontacts_googlekey;
+	
+	if ((!empty($lat)) && (!empty($lon)) && (!empty($zoom)) && (!empty($sizex)) && (!empty($sizey)) ) {
+		return sprintf(
+		"http://maps.google.com/staticmap?center=%s,%s&zoom=%s&size=%sx%s&markers=%s,%s,blues&key=%s", 
+		$lat, $lon, $zoom, $sizex, $sizey, $lat, $lon, $geocontacts_googlekey);
+	}
+	return get_bloginfo( 'wpurl' )."/wp-content/plugins/geocontacts/templates/empty.gif";
+}
+
+function geocontacts_buildlivesite($lat,$lon,$zoom,$mt) {
+	// see http://www.viawindowslive.com/Resources/VirtualEarth/BuildyourownURL.aspx
+	//a = aerial view
+	//r = road view
+	//h = hybrid
+	//o = birds eye
+	if ( $mt == "G_HYBRID_MAP" ) {
+		$maptype="h";
+	} else if ( $mt == "G_SATELLITE_MAP" ) {
+		$maptype="a";
+	} else {
+		$maptype="r";
+	}
+
+	if ((!empty($lat)) && (!empty($lon)) ) {
+		return sprintf("http://maps.live.com/default.aspx?cp=%s~%s&lvl=%s&style=%s&v=2",$lat,$lon,$zoom,$maptype);
+	}
+	return "";
+}
+
+function geocontacts_buildyahoosite($lat,$lon,$zoom,$mt) {
+
+	if ( $mt == "G_HYBRID_MAP" ) {
+		$maptype="h";
+	} else if ( $mt == "G_SATELLITE_MAP" ) {
+		$maptype="s";
+	} else {
+		$maptype="m";
+	}
+	$yzoom[1] = "17";
+	$yzoom[2] = "16";
+	$yzoom[3] = "15";
+	$yzoom[4] = "14";
+	$yzoom[5] = "13";
+	$yzoom[6] = "12";
+	$yzoom[7] = "11";
+	$yzoom[8] = "10";
+	$yzoom[9] = "9";
+	$yzoom[10] = "8";
+	$yzoom[11] = "7";
+	$yzoom[12] = "6";
+	$yzoom[13] = "5";
+	$yzoom[14] = "4";
+	$yzoom[15] = "3";
+	$yzoom[16] = "2";
+	$yzoom[17] = "1";
+	
+	$mag=$yzoom[$zoom];	
+	
+	if ((!empty($lat)) && (!empty($lon)) && (!empty($zoom)) ) {
+		return sprintf("http://maps.yahoo.com/#mvt=%s&lat=%s&lon=%s&mag=%s",$maptype,$lat,$lon,$mag);
+	}
+	return "";
+}
+
+function geocontacts_buildgooglesite($lat,$lon,$zoom,$mt) {
+	// http://maps.google.com/?ie=UTF8&z=14&t=h&q=21.26186090589837,-157.80624389648437
+	// &t=k satellite
+	// &t=h hybrid
+	// &t=p terrain
+	// &layer=t traffic
+	// &layer=c street view
+
+	if ( $mt == "G_HYBRID_MAP" ) {
+		$maptype = "&amp;t=h";
+	} else if ( $mt == "G_PHYSICAL_MAP" ) {
+		$maptype = "&amp;t=p";
+	} else if ( $mt == "G_SATELLITE_MAP" ) {
+		$maptype = "&amp;t=k";
+	} else {
+		// G_NORMAL_MAP
+		$maptype = "";
+	}
+	
+	if ((!empty($lat)) && (!empty($lon)) ) {
+		//sendalert (sprintf("http://maps.google.com/?ie=UTF8&z=%s&q=%s,%s%s",$zoom,$lat,$lon,$maptype));
+		//$map = "http://maps.google.com/?ie=UTF8&amp;z=".$zoom."&amp;q=".$lat.",".$lon.$maptype;
+		//sendalert( $map." test" );
+		return sprintf("http://maps.google.com/?ie=UTF8&z=%s&q=%s,%s%s",$zoom,$lat,$lon,$maptype);
+	}
+	return "";
 }
 
 function geocontacts_getIfNotEmpty($format,$var) {
